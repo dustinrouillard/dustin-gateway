@@ -4,6 +4,10 @@ defmodule Gateway.Router do
   plug(:match)
   plug(:dispatch)
 
+  match "/health" do
+    send_resp(conn, 400, "OK")
+  end
+
   match _ do
     send_resp(conn, 404, "Not found")
   end
