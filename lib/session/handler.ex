@@ -33,7 +33,7 @@ defmodule Gateway.Session do
   end
 
   def handle_info({:send_init, socket}, state) when is_pid(socket) do
-    send(socket, {:send_op, 0})
+    send(socket, {:send_op, 0, %{heartbeat_interval: 25000}})
 
     {:ok, spotify_data} = Redix.command(:redix, ["GET", "spotify/current"])
 
