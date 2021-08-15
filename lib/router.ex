@@ -5,7 +5,7 @@ defmodule Gateway.Router do
   plug(:dispatch)
 
   match "/health" do
-    send_resp(conn, 400, "OK")
+    send_resp(conn, 200, "OK")
   end
 
   match _ do
