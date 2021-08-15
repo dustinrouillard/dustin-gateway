@@ -1,0 +1,35 @@
+defmodule Gateway do
+  use Application
+
+  def start(_type, _args) do
+    import Supervisor.Spec, warn: false
+
+    children = [
+      {GenRegistry, worker_module: Gateway.Session},
+      {Redix, {Application.fetch_env!(:gateway, :redis_uri), [name: :redix]}},
+      {Gateway.Connectivity.Rabbit, []},
+      {Plug.Cowboy,
+       scheme: :http,
+       plug: Gateway.Router,
+       options: [
+         port: Application.fetch_env!(:gateway, :port),
+         dispatch: dispatch()
+       ]}
+    ]
+
+    IO.puts("Starting Gateway App on #{Application.fetch_env!(:gateway, :port)}")
+
+    opts = [strategy: :one_for_one, name: Gateway.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+
+  def dispatch do
+    [
+      {:_,
+       [
+         {"/socket", Gateway.Socket.Handler, []},
+         {:_, Plug.Cowboy.Handler, {Gateway.Router, []}}
+       ]}
+    ]
+  end
+end
