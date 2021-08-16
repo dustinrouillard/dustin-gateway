@@ -14,7 +14,12 @@ defmodule Gateway do
        options: [
          port: Application.fetch_env!(:gateway, :port),
          dispatch: dispatch()
-       ]}
+       ]},
+      {Gateway.Metrics, :normal},
+      {Plug.Cowboy,
+       scheme: :http,
+       plug: Gateway.Metrics.Router,
+       options: [port: Application.fetch_env!(:gateway, :metrics_port)]}
     ]
 
     IO.puts("Starting Gateway App on #{Application.fetch_env!(:gateway, :port)}")

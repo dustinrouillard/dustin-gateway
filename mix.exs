@@ -22,6 +22,8 @@ defmodule Gateway.MixProject do
     [
       {:gen_registry, "~> 1.1.0"},
       {:plug_cowboy, "~> 2.0"},
+      {:prometheus_plugs, "~> 1.1"},
+      {:prometheus_ex, "~> 3.0"},
       {:redix, "~> 1.1"},
       {:uuid, "~> 1.1"},
       {:jason, "~> 1.2"},

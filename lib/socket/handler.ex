@@ -37,6 +37,8 @@ defmodule Gateway.Socket.Handler do
     {:ok, session} =
       GenRegistry.lookup_or_start(Gateway.Session, session_id, [%{session_id: session_id}])
 
+    Gateway.Metrics.Collector.inc(:gauge, :dstn_gateway_connected_sessions)
+
     state = %__MODULE__{
       linked_session: session,
       session_id: session_id,
@@ -88,6 +90,7 @@ defmodule Gateway.Socket.Handler do
   end
 
   def websocket_info({:remote_send, data}, state) do
+    Gateway.Metrics.Collector.inc(:counter, :dstn_gateway_messages_outbound)
     {:reply, data, state}
   end
 
@@ -107,6 +110,7 @@ defmodule Gateway.Socket.Handler do
   def terminate(_reason, _req, state) do
     IO.puts("Lost socket connection #{state.session_id}")
     GenRegistry.stop(Gateway.Session, state.session_id)
+    Gateway.Metrics.Collector.dec(:gauge, :dstn_gateway_connected_sessions)
     :ok
   end
 
