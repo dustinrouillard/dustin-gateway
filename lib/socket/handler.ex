@@ -58,7 +58,7 @@ defmodule Gateway.Socket.Handler do
   def websocket_handle({:binary, message}, state) do
     {:ok, data} = inflate_msg(message)
     message = Jason.decode!(data)
-    IO.inspect(message)
+    handle_message(message, state)
 
     {:ok, state}
   end
@@ -66,7 +66,7 @@ defmodule Gateway.Socket.Handler do
   def websocket_handle({:text, message}, state) do
     case Jason.decode(message) do
       {:ok, json} when is_map(json) ->
-        IO.inspect(json)
+        handle_message(message, state)
         {:ok, state}
 
       _ ->
@@ -112,6 +112,10 @@ defmodule Gateway.Socket.Handler do
     GenRegistry.stop(Gateway.Session, state.session_id)
     Gateway.Metrics.Collector.dec(:gauge, :dstn_gateway_connected_sessions)
     :ok
+  end
+
+  defp handle_message(_data, _state) do
+    Gateway.Metrics.Collector.inc(:counter, :dstn_gateway_messages_inbound)
   end
 
   defp inflate_msg(data) do

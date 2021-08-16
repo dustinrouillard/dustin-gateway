@@ -17,6 +17,13 @@ defmodule Gateway.Metrics.Collector do
       labels: [],
       help: "Number of total messages sent since pod creation."
     )
+
+    Counter.new(
+      name: :dstn_gateway_messages_inbound,
+      registry: @registry,
+      labels: [],
+      help: "Number of total messages received since pod creation."
+    )
   end
 
   def dec(:gauge, stat) do
