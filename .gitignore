@@ -31,3 +31,5 @@ gateway-*.tar
 .DS_Store
 
 *.log
+
+.env

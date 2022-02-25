@@ -35,6 +35,14 @@ defmodule Gateway.Session do
   def handle_info({:send_init, socket}, state) when is_pid(socket) do
     send(socket, {:send_op, 0, %{heartbeat_interval: 25000}})
 
+    {:ok, status_data} = Redix.command(:redix, ["HGETALL", "status/current"])
+
+    status =
+      status_data
+      |> Gateway.Connectivity.RedisUtils.normalize()
+
+    send(self(), {:send_status, status})
+
     {:ok, spotify_data} = Redix.command(:redix, ["GET", "spotify/current"])
 
     case Jason.decode(spotify_data) do
@@ -58,6 +66,12 @@ defmodule Gateway.Session do
 
   def handle_info({:send_spotify_changed, data}, state) do
     send(state.linked_socket, {:send_op, 3, data})
+
+    {:noreply, state}
+  end
+
+  def handle_info({:send_status, data}, state) do
+    send(state.linked_socket, {:send_op, 4, data})
 
     {:noreply, state}
   end
