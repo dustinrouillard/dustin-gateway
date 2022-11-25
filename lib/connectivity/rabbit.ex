@@ -39,14 +39,20 @@ defmodule Gateway.Connectivity.Rabbit do
   defp consume(channel, tag, queue_name, payload) do
     :ok = Basic.ack(channel, tag)
 
-    payload
-    |> :erlang.binary_to_term()
-    |> action(queue_name)
+    case Jason.decode(payload) do
+      {:ok, json} when is_map(json) ->
+        action(json, queue_name)
+
+      _ ->
+        payload
+        |> :erlang.binary_to_term()
+        |> action(queue_name)
+    end
   rescue
     exception ->
       :ok = Basic.ack(channel, tag)
       IO.inspect(exception)
-      IO.puts("Error converting #{payload} to term")
+      IO.puts("Error converting payload to term")
   end
 
   defp action(data, queue_name) do
