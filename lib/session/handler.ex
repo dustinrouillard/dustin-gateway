@@ -76,7 +76,7 @@ defmodule Gateway.Session do
     {:noreply, state}
   end
 
-  def handle_info({:send_puffco_temperature, data}, state) do
+  def handle_info({:send_puffco_update, data}, state) do
     send(state.linked_socket, {:send_op, 5, data})
 
     {:noreply, state}

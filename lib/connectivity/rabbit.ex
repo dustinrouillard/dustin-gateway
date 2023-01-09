@@ -70,7 +70,7 @@ defmodule Gateway.Connectivity.Rabbit do
             {_max_id, _max_pid} =
               GenRegistry.reduce(Gateway.Session, {nil, -1}, fn
                 {_id, pid}, {_, _current} = _acc ->
-                  send(pid, {:send_puffco_temperature, data["d"]})
+                  send(pid, {:send_puffco_update, data["d"]})
               end)
         end
 
