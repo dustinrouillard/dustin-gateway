@@ -76,6 +76,12 @@ defmodule Gateway.Session do
     {:noreply, state}
   end
 
+  def handle_info({:send_puffco_temperature, data}, state) do
+    send(state.linked_socket, {:send_op, 5, data})
+
+    {:noreply, state}
+  end
+
   def handle_cast({:link_socket, socket_pid}, state) do
     IO.puts("Linking socket to session #{state.session_id}")
 
