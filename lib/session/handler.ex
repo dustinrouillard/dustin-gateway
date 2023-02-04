@@ -97,6 +97,28 @@ defmodule Gateway.Session do
       puffco_data
       |> Gateway.Connectivity.RedisUtils.normalize()
 
+    activeColor =
+      case Jason.decode(puffco["activeColor"]) do
+        {:ok, json} when is_map(json) ->
+          %{r: json["r"], g: json["g"], b: json["b"]}
+
+        _ ->
+          nil
+      end
+
+    puffco = Map.replace(puffco, "activeColor", activeColor)
+
+    profileColor =
+      case Jason.decode(puffco["profileColor"]) do
+        {:ok, json} when is_map(json) ->
+          %{r: json["r"], g: json["g"], b: json["b"]}
+
+        _ ->
+          nil
+      end
+
+    puffco = Map.replace(puffco, "profileColor", profileColor)
+
     send(state.linked_socket, {:send_op, 5, puffco})
 
     {:noreply, state}

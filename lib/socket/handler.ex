@@ -66,7 +66,7 @@ defmodule Gateway.Socket.Handler do
   def websocket_handle({:text, message}, state) do
     case Jason.decode(message) do
       {:ok, json} when is_map(json) ->
-        handle_message(message, state)
+        handle_message(json, state)
         {:ok, state}
 
       _ ->
