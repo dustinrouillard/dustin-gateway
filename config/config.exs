@@ -8,4 +8,7 @@ config :gateway,
       "redis://redis:6379",
   rabbit_uri:
     System.get_env("RABBIT_URI") ||
-      "amqp://rabbit:docker@rabbit:5672"
+      "amqp://rabbit:docker@rabbit:5672",
+  rabbit_queue:
+    System.get_env("RABBIT_QUEUE") ||
+      "dstn-gateway-ingest"

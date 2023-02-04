@@ -2,7 +2,8 @@ defmodule Gateway.Session do
   use GenServer
 
   defstruct session_id: nil,
-            linked_socket: nil
+            linked_socket: nil,
+            listened_events: []
 
   def start_link(state) do
     GenServer.start_link(__MODULE__, state, name: :"#{state.session_id}")
@@ -12,7 +13,8 @@ defmodule Gateway.Session do
     {:ok,
      %__MODULE__{
        session_id: state.session_id,
-       linked_socket: nil
+       linked_socket: nil,
+       listened_events: []
      }, {:continue, :setup_session}}
   end
 
@@ -58,6 +60,12 @@ defmodule Gateway.Session do
     {:noreply, state}
   end
 
+  def handle_info({:send_listen, channel}, state) do
+    send(state.linked_socket, {:send_op, 7, %{channel: channel}})
+
+    {:noreply, state}
+  end
+
   def handle_info({:send_spotify, data}, state) do
     send(state.linked_socket, {:send_op, 2, data})
 
@@ -82,6 +90,22 @@ defmodule Gateway.Session do
     {:noreply, state}
   end
 
+  def handle_info({:send_puffco_init}, state) do
+    {:ok, puffco_data} = Redix.command(:redix, ["HGETALL", "puffco"])
+
+    puffco =
+      puffco_data
+      |> Gateway.Connectivity.RedisUtils.normalize()
+
+    send(state.linked_socket, {:send_op, 5, puffco})
+
+    {:noreply, state}
+  end
+
+  def handle_call({:get_state}, _from, state) do
+    {:reply, state, state}
+  end
+
   def handle_cast({:link_socket, socket_pid}, state) do
     IO.puts("Linking socket to session #{state.session_id}")
 
@@ -91,6 +115,22 @@ defmodule Gateway.Session do
      %{
        state
        | linked_socket: socket_pid
+     }}
+  end
+
+  def handle_cast({:listen, channel}, state) do
+    IO.puts("Socket connection #{state.session_id} started listening to #{channel}")
+    send(self(), {:send_listen, channel})
+
+    case channel do
+      "puffco" ->
+        send(self(), {:send_puffco_init})
+    end
+
+    {:noreply,
+     %{
+       state
+       | listened_events: Enum.concat(state.listened_events, [channel])
      }}
   end
 end

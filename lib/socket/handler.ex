@@ -114,8 +114,16 @@ defmodule Gateway.Socket.Handler do
     :ok
   end
 
-  defp handle_message(_data, _state) do
+  defp handle_message(data, state) do
     Gateway.Metrics.Collector.inc(:counter, :dstn_gateway_messages_inbound)
+
+    case data["op"] do
+      6 ->
+        GenServer.cast(state.linked_session, {:listen, data["d"]["channel"]})
+
+      _ ->
+        nil
+    end
   end
 
   defp inflate_msg(data) do

@@ -10,8 +10,8 @@ defmodule Gateway.Connectivity.Rabbit do
     {:ok, conn} = AMQP.Connection.open("#{Application.fetch_env!(:gateway, :rabbit_uri)}")
     {:ok, chan} = AMQP.Channel.open(conn)
 
-    AMQP.Queue.declare(chan, "dstn-gateway-ingest", durable: true)
-    {:ok, _tag} = Basic.consume(chan, "dstn-gateway-ingest")
+    AMQP.Queue.declare(chan, "#{Application.fetch_env!(:gateway, :rabbit_queue)}", durable: true)
+    {:ok, _tag} = Basic.consume(chan, "#{Application.fetch_env!(:gateway, :rabbit_queue)}")
 
     {:ok, chan}
   end
@@ -56,8 +56,10 @@ defmodule Gateway.Connectivity.Rabbit do
   end
 
   defp action(data, queue_name) do
-    case queue_name do
-      "dstn-gateway-ingest" ->
+    ingest_queue = Application.fetch_env!(:gateway, :rabbit_queue)
+
+    cond do
+      queue_name == ingest_queue ->
         case data["t"] do
           0 ->
             {_max_id, _max_pid} =
@@ -69,13 +71,19 @@ defmodule Gateway.Connectivity.Rabbit do
           1 ->
             {_max_id, _max_pid} =
               GenRegistry.reduce(Gateway.Session, {nil, -1}, fn
-                {_id, pid}, {_, _current} = _acc ->
-                  send(pid, {:send_puffco_update, data["d"]})
-              end)
-        end
+                {id, pid}, {_, _current} = _acc ->
+                  state = GenServer.call(pid, {:get_state})
 
-      _ ->
-        nil
+                  if length(state.listened_events) > 0 do
+                    send(pid, {:send_puffco_update, data["d"]})
+                  else
+                    {id, pid}
+                  end
+              end)
+
+          _ ->
+            nil
+        end
     end
   end
 end
