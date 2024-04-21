@@ -68,19 +68,6 @@ defmodule Gateway.Connectivity.Rabbit do
                   send(pid, {:send_spotify_changed, data["d"]})
               end)
 
-          1 ->
-            {_max_id, _max_pid} =
-              GenRegistry.reduce(Gateway.Session, {nil, -1}, fn
-                {id, pid}, {_, _current} = _acc ->
-                  state = GenServer.call(pid, {:get_state})
-
-                  if length(state.listened_events) > 0 do
-                    send(pid, {:send_puffco_update, data["d"]})
-                  else
-                    {id, pid}
-                  end
-              end)
-
           _ ->
             nil
         end

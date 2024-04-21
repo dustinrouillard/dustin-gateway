@@ -84,46 +84,6 @@ defmodule Gateway.Session do
     {:noreply, state}
   end
 
-  def handle_info({:send_puffco_update, data}, state) do
-    send(state.linked_socket, {:send_op, 5, data})
-
-    {:noreply, state}
-  end
-
-  def handle_info({:send_puffco_init}, state) do
-    {:ok, puffco_data} = Redix.command(:redix, ["HGETALL", "puffco"])
-
-    puffco =
-      puffco_data
-      |> Gateway.Connectivity.RedisUtils.normalize()
-
-    activeColor =
-      case Jason.decode(puffco["activeColor"]) do
-        {:ok, json} when is_map(json) ->
-          %{r: json["r"], g: json["g"], b: json["b"]}
-
-        _ ->
-          nil
-      end
-
-    puffco = Map.replace(puffco, "activeColor", activeColor)
-
-    profileColor =
-      case Jason.decode(puffco["profileColor"]) do
-        {:ok, json} when is_map(json) ->
-          %{r: json["r"], g: json["g"], b: json["b"]}
-
-        _ ->
-          nil
-      end
-
-    puffco = Map.replace(puffco, "profileColor", profileColor)
-
-    send(state.linked_socket, {:send_op, 5, puffco})
-
-    {:noreply, state}
-  end
-
   def handle_call({:get_state}, _from, state) do
     {:reply, state, state}
   end
@@ -143,11 +103,6 @@ defmodule Gateway.Session do
   def handle_cast({:listen, channel}, state) do
     IO.puts("Socket connection #{state.session_id} started listening to #{channel}")
     send(self(), {:send_listen, channel})
-
-    case channel do
-      "puffco" ->
-        send(self(), {:send_puffco_init})
-    end
 
     {:noreply,
      %{
