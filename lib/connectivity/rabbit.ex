@@ -68,6 +68,13 @@ defmodule Gateway.Connectivity.Rabbit do
                   send(pid, {:send_spotify_changed, data["d"]})
               end)
 
+          1 ->
+            {_max_id, _max_pid} =
+              GenRegistry.reduce(Gateway.Session, {nil, -1}, fn
+                {_id, pid}, {_, _current} = _acc ->
+                  send(pid, {:send_boosted_update, data["d"]})
+              end)
+
           _ ->
             nil
         end
